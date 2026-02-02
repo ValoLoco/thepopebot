@@ -11,7 +11,7 @@ You are PopeBot, an autonomous AI agent running inside a Docker container. You h
 
 ## Environment
 
-- **Working Directory**: `/workspace` - This is the cloned repository
+- **Working Directory**: `/job` - This is the cloned repository
 - **Branch**: You are working on the branch specified in `$BRANCH`
 - **Browser**: Chromium runs locally on port 9222 for browser automation
 

@@ -1,74 +1,172 @@
 # PopeBot
 
-An autonomous AI agent infrastructure using Claude Code in Docker containers.
+A template repository for creating custom autonomous AI agents. Clone this repo, customize the config files, and run via Docker to execute tasks autonomously.
+
+## How It Works
+
+```
+1. Clone this template → 2. Customize config → 3. Push to your repo → 4. Run Docker
+                                                                            ↓
+                                             Your agent commits results ← Agent runs your task
+```
+
+The Docker container:
+1. Clones YOUR repository at runtime
+2. Runs the Pi coding agent with YOUR customizations
+3. Commits results back to YOUR repo
 
 ## Quick Start
 
-### 1. Create credentials.json
+### 1. Clone and Configure
 
 ```bash
-cp credentials.example.json credentials.json
-# Edit credentials.json with your API keys
+# Clone the template
+git clone https://github.com/yourusername/popebot.git my-agent
+cd my-agent
+
+# Create auth.json with your API keys
+cp auth.example.json auth.json
+# Edit auth.json with your Anthropic API key
 ```
 
-### 2. Create a Task
+### 2. Define Your Task
 
-Create a `task.md` file in your repository:
+Edit `workspace/job.md`:
 
 ```markdown
-# Task: Add User Login
+# Task: Build a Landing Page
 
-## Requirements
-- Create login form component
-- Add authentication API endpoint
+Create a responsive landing page with:
+- Hero section with call-to-action
+- Features grid
+- Contact form
 ```
 
-### 3. Build and Run
+### 3. Push to Your Repository
 
 ```bash
-docker compose build
-BRANCH=feature/login docker compose up
+git remote set-url origin https://github.com/yourusername/my-agent.git
+git push -u origin main
 ```
 
-### 4. Monitor
+### 4. Run the Agent
 
-- **Terminal**: http://localhost:7681
-- **Browser**: http://localhost:6901
+```bash
+docker build -t my-agent .
+docker run \
+  -e REPO_URL=https://github.com/yourusername/my-agent.git \
+  -e BRANCH=main \
+  -e GITHUB_TOKEN=ghp_xxxx \
+  my-agent
+```
 
-## Configuration
+The agent will clone your repo, execute the task, and commit the results.
 
-### credentials.json
+## Configuration Files
 
-| Field | Description | Required |
-|-------|-------------|----------|
-| `anthropic_api_key` | Anthropic API key | Yes |
-| `github_token` | GitHub access token | No |
-| `repo_url` | Repository URL to clone | No |
-| `git_user_name` | Git commit author name | No (default: popebot) |
-| `git_user_email` | Git commit author email | No (default: popebot@example.com) |
+### auth.json (Required)
 
-### Environment Variables
+API credentials for the AI models. Pi reads this file automatically.
 
-These can be set when running docker compose:
+```json
+{
+  "anthropic": { "type": "api_key", "key": "sk-ant-xxxxx" }
+}
+```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `BRANCH` | Git branch to work on | `main` |
-| `TASK_FILE` | Path to task file | `task.md` |
-| `ROLE` | Agent role (worker/orchestrator) | `worker` |
+Supported providers: `anthropic`, `openai`, `groq`
+
+### workspace/job.md (Required)
+
+The task for the agent to execute. Be specific about what you want done.
+
+### AGENTS.md
+
+Core behavioral instructions for the agent. Modify to change how the agent works, what it's allowed to do, and its workflow patterns.
+
+### SOUL.md
+
+Personality traits and values. Customize to give your agent a distinct character.
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `REPO_URL` | Your repository URL | Yes |
+| `BRANCH` | Branch to work on | Yes |
+| `GITHUB_TOKEN` | GitHub PAT for authentication | Yes (private repos) |
+
+## File Structure
+
+```
+/
+├── auth.json               # API credentials
+├── AGENTS.md               # Agent behavior rules
+├── SOUL.md                 # Agent personality
+├── MEMORY.md               # Persistent knowledge
+├── TOOLS.md                # Available tools
+├── HEARTBEAT.md            # Self-monitoring
+├── MERGE_JOB.md            # Post-job merge instructions
+├── Dockerfile              # Container definition
+├── entrypoint.sh           # Startup script
+├── roles/
+│   ├── orchestrator.md     # Orchestrator behavior
+│   └── worker.md           # Worker behavior
+└── workspace/
+    ├── job.md              # Current task
+    └── logs/               # Session logs
+```
+
+## What's in the Container
+
+- Node.js 22
+- Pi coding agent
+- Playwright + Chromium (headless browser, CDP port 9222)
+- Git + GitHub CLI
+
+## Runtime Flow
+
+1. Container starts Chrome in headless mode
+2. Clones your repository to `/job`
+3. Sets `PI_CODING_AGENT_DIR=/job` (so Pi finds auth.json)
+4. Runs Pi with AGENTS.md + job.md as instructions
+5. Commits all changes: `popebot: job {UUID}`
+6. Optionally runs merge operations
+7. Commits final state: `done.`
+
+## Customization
+
+### Modify Agent Behavior
+
+Edit `AGENTS.md` to change:
+- Git conventions and commit rules
+- Prohibited actions
+- Error handling approach
+- Communication protocols
+
+### Add Personality
+
+Edit `SOUL.md` to define:
+- Identity and traits
+- Working style preferences
+- Values and principles
+
+### Define Tasks
+
+Edit `workspace/job.md` with:
+- Clear task description
+- Specific requirements
+- Expected outputs
 
 ## Roles
 
-- **worker** (default): Executes tasks, writes code, makes commits
-- **orchestrator**: Manages branches, merges PRs, resolves conflicts
+| Role | Description |
+|------|-------------|
+| `worker` | Executes tasks, writes code, makes commits |
+| `orchestrator` | Manages branches, merges PRs, resolves conflicts |
 
-## Agent Files
+Role-specific behaviors are defined in `roles/*.md`.
 
-| File | Purpose |
-|------|---------|
-| `AGENTS.md` | Core agent instructions |
-| `SOUL.md` | Agent personality |
-| `MEMORY.md` | Long-term knowledge |
-| `TOOLS.md` | Available tools |
-| `HEARTBEAT.md` | Periodic check instructions |
-| `roles/*.md` | Role-specific behaviors |
+## Session Logs
+
+Each job creates a session log at `workspace/logs/{JOB_ID}.jsonl`. These can be used to resume sessions or review agent actions.
