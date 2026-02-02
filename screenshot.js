@@ -36,6 +36,7 @@ async function takeScreenshot() {
   // Close the page but not the browser (since it's shared)
   await page.close();
   console.log('Done!');
+  process.exit(0);
 }
 
 takeScreenshot().catch(err => {
