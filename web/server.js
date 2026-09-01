@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import next from 'next';
 import { attachCodeProxy } from 'thepopebot/code/ws-proxy';
 
-const app = next({ dev: false });
+const app = next({ dev: true });
 const handle = app.getRequestHandler();
 
 // HACK: Prevent Next.js from registering its own WebSocket upgrade handler.
@@ -19,7 +19,7 @@ app.prepare().then(() => {
 
   attachCodeProxy(server);
 
-  const port = process.env.PORT || 80;
+  const port = process.env.PORT || 8080;
   server.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`);
   });
